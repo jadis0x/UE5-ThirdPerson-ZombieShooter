@@ -6,6 +6,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Components/WidgetComponent.h"
+#include "Widgets/Misc/NetRoleWidget.h"
+
 
 ACharacterBase::ACharacterBase()
 {
@@ -24,12 +27,22 @@ ACharacterBase::ACharacterBase()
 
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+
+	NetRoleWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NetRoleWidget"));
+	NetRoleWidget->SetupAttachment(GetRootComponent());
 }
 
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if(NetRoleWidget)
+	{
+		if(UNetRoleWidget* NetRole = Cast<UNetRoleWidget>(NetRoleWidget->GetUserWidgetObject()))
+		{
+			NetRole->ShowPlayerNetRole(this);
+		}
+	}
 }
 
 void ACharacterBase::Tick(float DeltaTime)

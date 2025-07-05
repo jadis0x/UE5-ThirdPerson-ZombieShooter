@@ -8,6 +8,7 @@
 
 class USpringArmComponent;
 class UCameraComponent;
+class UWidgetComponent;
 
 UCLASS()
 class DECAYPROTOCOL_API ACharacterBase : public ACharacter
@@ -35,4 +36,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	UCameraComponent* FollowCamera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Widget", meta = (AllowPrivateAccess = "true"))
+	UWidgetComponent* NetRoleWidget;
 };
