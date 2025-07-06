@@ -8,7 +8,8 @@
 #include "Camera/CameraComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Widgets/Misc/NetRoleWidget.h"
-
+#include "Net/UnrealNetwork.h"
+#include "Weapon/Weapon.h"
 
 ACharacterBase::ACharacterBase()
 {
@@ -30,6 +31,8 @@ ACharacterBase::ACharacterBase()
 
 	NetRoleWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NetRoleWidget"));
 	NetRoleWidget->SetupAttachment(GetRootComponent());
+
+	OverlappingWeapon = nullptr;
 }
 
 void ACharacterBase::BeginPlay()
@@ -63,6 +66,13 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 }
 
+void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ACharacterBase, OverlappingWeapon, COND_OwnerOnly)
+}
+
 void ACharacterBase::MoveForward(float Value)
 {
 	if(Controller != nullptr && Value != 0.f)
@@ -85,15 +95,43 @@ void ACharacterBase::MoveRight(float Value)
 	}
 }
 
-
 void ACharacterBase::Turn(float Value)
 {
 	AddControllerYawInput(Value);
 }
-
 
 void ACharacterBase::Look(float Value)
 {
 	AddControllerPitchInput(Value);
 }
 
+void ACharacterBase::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
+{
+	if(OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickupWidget(true);
+	}
+
+	if(LastWeapon)
+	{
+		LastWeapon->ShowPickupWidget(false);
+	}
+}
+
+void ACharacterBase::SetOverlappingWeapon(AWeapon* Weapon)
+{
+	if(OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickupWidget(false);
+	}
+
+	OverlappingWeapon = Weapon;
+
+	if(IsLocallyControlled())
+	{
+		if(OverlappingWeapon)
+		{
+			OverlappingWeapon->ShowPickupWidget(true);
+		}
+	}
+}
