@@ -10,6 +10,7 @@
 #include "Widgets/Misc/NetRoleWidget.h"
 #include "Net/UnrealNetwork.h"
 #include "Weapon/Weapon.h"
+#include "Components/CombatComponent.h"
 
 ACharacterBase::ACharacterBase()
 {
@@ -31,6 +32,9 @@ ACharacterBase::ACharacterBase()
 
 	NetRoleWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NetRoleWidget"));
 	NetRoleWidget->SetupAttachment(GetRootComponent());
+
+	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	Combat->SetIsReplicated(true);
 
 	OverlappingWeapon = nullptr;
 }
@@ -63,7 +67,19 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("Turn", this, &ThisClass::Turn);
 	PlayerInputComponent->BindAxis("Look", this, &ThisClass::Look);
 
+	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ThisClass::EquipButtonPressed);
+
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+}
+
+void ACharacterBase::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	if(Combat)
+	{
+		Combat->Character = this;
+	}
 }
 
 void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -72,6 +88,8 @@ void ACharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 	DOREPLIFETIME_CONDITION(ACharacterBase, OverlappingWeapon, COND_OwnerOnly)
 }
+
+
 
 void ACharacterBase::MoveForward(float Value)
 {
@@ -103,6 +121,28 @@ void ACharacterBase::Turn(float Value)
 void ACharacterBase::Look(float Value)
 {
 	AddControllerPitchInput(Value);
+}
+
+void ACharacterBase::EquipButtonPressed()
+{
+	if(Combat)
+	{
+		if(HasAuthority())
+		{
+			Combat->EquipWeapon(OverlappingWeapon);
+		}
+		else {
+			ServerEquipButtonPressed();
+		}
+	}
+}
+
+void ACharacterBase::ServerEquipButtonPressed_Implementation()
+{
+	if(Combat)
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
 }
 
 void ACharacterBase::OnRep_OverlappingWeapon(AWeapon* LastWeapon)

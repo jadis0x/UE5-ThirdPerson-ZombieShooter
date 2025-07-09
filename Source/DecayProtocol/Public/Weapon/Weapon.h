@@ -27,6 +27,8 @@ class DECAYPROTOCOL_API AWeapon : public AActor
 public:	
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	void ShowPickupWidget(bool bShowWidget);
 
 protected:
@@ -57,9 +59,16 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USphereComponent* AreaSphere;
 
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon UI")
 	UWidgetComponent* PickupWidget;
+	
+	// rep
+	UFUNCTION()
+	void OnRep_WeaponState();
+public:
+	USphereComponent* GetAreaSphere() const;
+	void SetWeaponState(EWeaponState NewState);
 };

@@ -6,6 +6,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Characters/CharacterBase.h"
+#include "Net/UnrealNetwork.h"
 
 AWeapon::AWeapon()
 {
@@ -50,7 +51,6 @@ void AWeapon::BeginPlay()
 
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("On"))
 	ACharacterBase* CharacterBase = Cast<ACharacterBase>(OtherActor);
 
 	if(CharacterBase)
@@ -61,7 +61,6 @@ void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 
 void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	UE_LOG(LogTemp, Warning, TEXT("End"))
 	ACharacterBase* CharacterBase = Cast<ACharacterBase>(OtherActor);
 
 	if(CharacterBase)
@@ -76,11 +75,61 @@ void AWeapon::Tick(float DeltaTime)
 
 }
 
+void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AWeapon, WeaponState);
+}
+
 void AWeapon::ShowPickupWidget(bool bShowWidget)
 {
 	if(PickupWidget)
 	{
 		PickupWidget->SetVisibility(bShowWidget);
+	}
+}
+
+USphereComponent* AWeapon::GetAreaSphere() const
+{
+	return AreaSphere;
+}
+
+void AWeapon::SetWeaponState(EWeaponState NewState)
+{
+	WeaponState = NewState;
+
+	switch(WeaponState)
+	{
+		case EWeaponState::EWS_Equipped:
+			ShowPickupWidget(false);
+			AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			break;
+
+		case EWeaponState::EWS_Initial:
+		case EWeaponState::EWS_Dropped:
+			break;
+
+		default:
+			break;
+	}
+}
+
+void AWeapon::OnRep_WeaponState()
+{
+	switch(WeaponState)
+	{
+		case EWeaponState::EWS_Equipped:
+			ShowPickupWidget(false);
+			AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			break;
+
+		case EWeaponState::EWS_Initial:
+		case EWeaponState::EWS_Dropped:
+			break;
+
+		default:
+			break;
 	}
 }
 
